@@ -1,0 +1,112 @@
+Plotting
+
+(require (lib "plot.ss" "plot"))
+
+simple plotting
+
+use plot function
+
+(plot (line (lambda(x) (sin x)))
+	  (x-min -1)
+	  (x-max 1)
+	  (title "Sin(x))
+)
+
+this is a sample plot function
+here (line . . . . . . ) procedure is the necesary argument, where as x-min, x-max, title are optional arguments
+various plots can be separated using color argument in line procedure
+
+
+
+
+DRAWING
+
+Drawing in Racket requires a DEVICE CONTEXT (DC) which is an instance of dc% interface.
+
+ (define myframe (new frame% [label "Drawing Example"]
+                            [width 300]
+                            [height 300]))
+	frame% is a top level container window . It has a title bar (which displays the frame's label (necesary).
+	frames can be single document interface or multiple document interface
+	'mdi-parent and 'mdi-child are supplied in style attribute
+	for 'mdi-child parent must be a 'mdi-parent
+	
+ (define mycanvas (new canvas% [parent myframe]))
+ 	canvas% is a general purpose window for drawing and handling events
+ 	
+ (define mydc (send mycanvas get-dc))
+ 	send is a way to call method's of a class from outside the class
+ 	like here get-dc is a method of canvas% class
+ 	so to know the device context of our mycanvas we use send method
+ 	this dc is now stored as mydc
+ 	so that it can be used later in painting
+ 	
+ (send myframe show #t)
+ 	this makes the frame visible to the user
+ 	show method for our frame object
+ 	
+ other classes are pen%, brush%
+ methods are 
+ 	set-pen takes as argument an object of pen% class
+ 	set-brush takes as argument an object of brush% class
+ 	
+ 	example
+ 	(define movepen (make-object pen% "BLACK" 1 'transparent))
+ 		'transparent is argument so that whatever pen writes is not visible
+ 		so effectively this object just moves the pen
+ 		'solid can be for solid lines to be drwan as the pen moves
+ 		
+ draw-arc
+ draw-rectangle are various other methods available
+ 
+  ; Wait a second to let the window get ready
+  (sleep/yield 1)
+  
+  this is needed because when you do (send myframe show #t) then this request is queued for processing but might take some time
+  so the 1 sec delay allows the request to be processed and then allows you to continue with commands that follow
+  
+  
+  but this is a poor method
+  as in when ever our frame is covered by some other window then the drawing will disappear and then we need to ensure that when ever the canvas is redrawn our drawing is also redrawn
+  so we can declare a paint callback function
+  it is supplied as an argument to canvas object
+  
+  example
+  (define mycanvas
+  	(new canvas% [parent myframe]
+  				 [paint-callback
+  				 	(lambda (mycanvas dc) . . . .)]
+    )
+  )
+  
+  
+  For all type of device context DCs the drawing origin is the top-left corner of the DC
+  
+  
+                             area<%>
+        _____________________|_______________
+        |               |                   |
+      subarea<%>     window<%>       area-container<%>      
+<<<____|____       _____|__________       __|___  ___________________<<<
+            |      |              |       |    |  |                  
+           subwindow<%>           |       |    |  |                  
+<<<______________|___________     |       |    |  |                 _<<<
+            |               |     |       |    pane%                |
+       control<%>           |     |       |     |- horizontal-pane% |
+        |- message%         |     |       |     |- vertical-pane%   |
+        |- button%          |     |       |                         |
+        |- check-box%       |  area-container-window<%>             |
+        |- slider%          |        |                              |
+        |- gauge%           |        |            __________________|
+        |- text-field%      |        |            |   
+            |- combo-field% |        |-------- panel%       
+        |- radio-box%       |        |          |- horizontal-panel%
+        |- list-control<%>  |        |          |- vertical-panel%
+            |- choice%      |        |              |- tab-panel%
+            |- list-box%    |        |              |- group-box-panel%
+                            |        |
+                            |        |- top-level-window<%>
+                            |            |- frame% 
+                         canvas<%>       |- dialog%
+                          |- canvas%
+                          |- editor-canvas%
